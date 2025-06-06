@@ -39,26 +39,28 @@ def one_hot_encode_action(X, num_classes=6):
     return new_out
 
 class MyData():
-    def __init__(self, X, Y):
+    def __init__(self, X, Y, class_num):
         self.X = [torch.tensor(x, dtype=torch.float32)for x in X]
-        self.Y = [torch.tensor(y, dtype=torch.long)for y in Y]
+        self.Y = []
+        for y in np.array(X):
+            y = y[:,0]
+            y = one_hot_encode_action(y, class_num)
+            y.pop(0)
+            self.Y.append(y)
+        self.Y = [torch.tensor(y, dtype=torch.float32)for y in self.Y]
+        print(self.Y[0])
         print("all data converted to tensors")
 
     def __len__(self):
         return len(self.Y)
     
     def __getitem__(self, inx):
-        sequenc = self.X[inx]
-        X_in = sequenc
-        y_in = sequenc[1:,0]
-        y_in = one_hot_encode_action(y_in, num_classes=6)
+        X_in = self.X[inx]
+        y_in = self.Y[inx]
         return X_in, y_in 
 
-data_set = MyData(fulldata, fulldata_y)
+data_set = MyData(fulldata, fulldata_y, 6)
 louder = DataLoader(data_set, batch_size=2, shuffle=True)
-
-print(f"data X : {data_set.X[0]}")
-print(f"data Y : {data_set.Y}")
 
 class dronAgent(nn.Module):
     def __init__(self):
@@ -70,7 +72,7 @@ class dronAgent(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(60, 30),
                 nn.LeakyReLU(),
-                nn.Linear(30,7)
+                nn.Linear(30,6)
             )
 
     def forward(self, x):
