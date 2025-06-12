@@ -78,7 +78,8 @@ class dronAgent(nn.Module):
     def forward(self, x):
         x = self.input(x)
         out, _ = self.LSTM(x)
-        decode_in = out[:,-1,:]
+        print(f"out shape {out.shape}")
+        decode_in = out
         output = self.decoder(decode_in)
         return output
     
@@ -92,19 +93,24 @@ optimizer = torch.optim.Adam(model_1.parameters(), lr=0.01)
 def train(datalouder, model, loss_fc, optim):
     model.train()
     for batch, (X,y) in enumerate(datalouder):
-        X, y = X.to(device), y.to(device)
+        for i in range(len(X)):
+            for step in range(len(X)):
+                print(f"shape X {X.shape}")
+                X_step = X[i,step].unsqueeze(0)
+                y_step = y[i,step].unsqueeze(0)
 
-        print(f"X data {X}, y data {y}")
+                X_step, y_step = X_step.to(device), y_step.to(device)
 
-        optim.zero_grad()
+                print(f"X data {X_step}, y data {y_step}")
 
-        print(X)
-        pred = model(X)
-        pred = pred.transpose(1, 2)
+                optim.zero_grad()
 
-        loss = loss_fc(pred, y)
-        loss.backward()
-        optim.step()
+                pred = model(X_step)
+                print(f"pred shape {pred.shape}, y shape {y_step.shape}")
+
+                loss = loss_fc(pred, y_step)
+                loss.backward()
+                optim.step()
 
         if batch % 100 ==0:
             loss_val = loss.item()
